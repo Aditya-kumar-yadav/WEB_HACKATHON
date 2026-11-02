@@ -25,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateAnalyticsUI();
   renderRegistrationsTable();
   checkActiveSession();
+  checkAdminDashboardView();
 
   // Initialize Lucide icons
   if (window.lucide) {
@@ -38,6 +39,11 @@ document.addEventListener("DOMContentLoaded", () => {
     updateAnalyticsUI();
     renderRegistrationsTable();
     checkActiveSession();
+  });
+
+  // Listen for admin auth change
+  window.addEventListener("hackathon_admin_auth_changed", () => {
+    checkAdminDashboardView();
   });
 });
 
@@ -61,8 +67,7 @@ function switchTab(tabId) {
   });
 
   if (tabId === "dashboard") {
-    updateAnalyticsUI();
-    renderRegistrationsTable();
+    checkAdminDashboardView();
   } else if (tabId === "catalogue") {
     renderCatalogue();
   } else if (tabId === "register") {
@@ -70,6 +75,157 @@ function switchTab(tabId) {
   }
 
   if (window.lucide) window.lucide.createIcons();
+}
+
+// ============================================================================
+// ORGANIZER ADMIN AUTHENTICATION (Excel & Master Roster Protection)
+// ============================================================================
+function checkAdminDashboardView() {
+  const isAuth = AdminAuth.isAuthenticated();
+  const lockedView = document.getElementById("admin-login-view");
+  const unlockedView = document.getElementById("admin-authenticated-view");
+  const navLockIcon = document.getElementById("nav-lock-icon");
+  const navText = document.getElementById("nav-dashboard-text");
+  const headerPill = document.getElementById("header-admin-pill");
+
+  if (isAuth) {
+    if (lockedView) lockedView.classList.add("hidden");
+    if (unlockedView) unlockedView.classList.remove("hidden");
+    if (navLockIcon) {
+      navLockIcon.setAttribute("data-lucide", "unlock");
+      navLockIcon.className = "w-4 h-4 text-emerald-400";
+    }
+    if (navText) navText.textContent = "Admin Console";
+    if (headerPill) {
+      headerPill.innerHTML = `
+        <div class="flex items-center space-x-2">
+          <span class="text-xs text-emerald-400 font-semibold flex items-center gap-1">
+            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+            <span class="hidden sm:inline">Organizer Active</span>
+          </span>
+          <button onclick="handleAdminLogout()" class="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 border border-gray-700 flex items-center space-x-1 transition-colors">
+            <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span>Lock</span>
+          </button>
+        </div>
+      `;
+    }
+    updateAnalyticsUI();
+    renderRegistrationsTable();
+  } else {
+    if (lockedView) lockedView.classList.remove("hidden");
+    if (unlockedView) unlockedView.classList.add("hidden");
+    if (navLockIcon) {
+      navLockIcon.setAttribute("data-lucide", "lock");
+      navLockIcon.className = "w-4 h-4 text-amber-400";
+    }
+    if (navText) navText.textContent = "Organizer Portal";
+    if (headerPill) {
+      headerPill.innerHTML = `
+        <button onclick="switchTab('dashboard')" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800/80 text-gray-300 border border-gray-700 hover:border-gray-600 transition-all">
+          <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>Organizer Login</span>
+        </button>
+      `;
+    }
+  }
+
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function handleAdminLogin(e) {
+  if (e) e.preventDefault();
+  const input = document.getElementById("admin-passcode-input");
+  const errorMsg = document.getElementById("admin-login-error");
+  const pass = input ? input.value : "";
+
+  if (AdminAuth.login(pass)) {
+    if (input) input.value = "";
+    if (errorMsg) errorMsg.classList.add("hidden");
+    checkAdminDashboardView();
+  } else {
+    if (errorMsg) {
+      errorMsg.textContent = "❌ Incorrect password! Default is admin2026";
+      errorMsg.classList.remove("hidden");
+    } else {
+      alert("❌ Incorrect password! Default is admin2026");
+    }
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }
+}
+
+function handleAdminLogout() {
+  AdminAuth.logout();
+  checkAdminDashboardView();
+  alert("🔒 You have been logged out. The Excel export and roster are now locked.");
+}
+
+function togglePasscodeVisibility() {
+  const input = document.getElementById("admin-passcode-input");
+  const icon = document.getElementById("toggle-eye-icon");
+  if (!input) return;
+  if (input.type === "password") {
+    input.type = "text";
+    if (icon) icon.setAttribute("data-lucide", "eye-off");
+  } else {
+    input.type = "password";
+    if (icon) icon.setAttribute("data-lucide", "eye");
+  }
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function openChangePasswordModal() {
+  const modal = document.getElementById("change-password-modal");
+  if (modal) modal.classList.remove("hidden");
+}
+
+function closeChangePasswordModal() {
+  const modal = document.getElementById("change-password-modal");
+  if (modal) modal.classList.add("hidden");
+}
+
+function saveNewAdminPassword(e) {
+  if (e) e.preventDefault();
+  const currentInput = document.getElementById("curr-admin-pass");
+  const newInput = document.getElementById("new-admin-pass");
+  const confirmInput = document.getElementById("confirm-admin-pass");
+
+  if (!AdminAuth.isAuthenticated()) {
+    alert("You must be logged in as organizer to change the password.");
+    return;
+  }
+
+  const currentPass = currentInput.value.trim();
+  const newPass = newInput.value.trim();
+  const confirmPass = confirmInput.value.trim();
+
+  if (currentPass !== AdminAuth.getPassword()) {
+    alert("Current password does not match.");
+    currentInput.focus();
+    return;
+  }
+
+  if (newPass.length < 4) {
+    alert("New password must be at least 4 characters.");
+    newInput.focus();
+    return;
+  }
+
+  if (newPass !== confirmPass) {
+    alert("New passwords do not match.");
+    confirmInput.focus();
+    return;
+  }
+
+  AdminAuth.setPassword(newPass);
+  closeChangePasswordModal();
+  currentInput.value = "";
+  newInput.value = "";
+  confirmInput.value = "";
+  alert("✓ Password updated successfully! Keep this password safe.");
 }
 
 // ============================================================================

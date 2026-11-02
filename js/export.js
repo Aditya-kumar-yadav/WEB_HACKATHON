@@ -7,8 +7,22 @@
  */
 
 const ExportManager = {
+  // Check if admin is authenticated
+  checkAdminAccess() {
+    if (typeof AdminAuth !== "undefined" && !AdminAuth.isAuthenticated()) {
+      alert("🔒 Restricted Access: Only the organizer can export Excel files or view the full roster. Please enter the organizer password to unlock.");
+      if (typeof switchTab === "function") {
+        switchTab("dashboard");
+      }
+      return false;
+    }
+    return true;
+  },
+
   // 1. EXPORT TO MICROSOFT EXCEL (.xlsx)
   exportToExcel() {
+    if (!this.checkAdminAccess()) return false;
+
     const registrations = StorageManager.getRegistrations();
     if (registrations.length === 0) {
       alert("No registrations found to export! Please add teams or load demo data first.");
@@ -157,6 +171,8 @@ const ExportManager = {
 
   // 2. EXPORT TO CSV
   exportToCSV() {
+    if (!this.checkAdminAccess()) return false;
+
     const registrations = StorageManager.getRegistrations();
     if (registrations.length === 0) {
       alert("No registrations found to export!");
@@ -308,6 +324,7 @@ const ExportManager = {
 
   // 4. DOWNLOAD GOOGLE NOTES AS TEXT / MARKDOWN FILE
   downloadGoogleNotesFile() {
+    if (!this.checkAdminAccess()) return false;
     const text = this.generateGoogleNotesText();
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -323,6 +340,7 @@ const ExportManager = {
 
   // 5. COPY GOOGLE NOTES TO CLIPBOARD
   async copyGoogleNotesToClipboard() {
+    if (!this.checkAdminAccess()) return false;
     const text = this.generateGoogleNotesText();
     try {
       await navigator.clipboard.writeText(text);

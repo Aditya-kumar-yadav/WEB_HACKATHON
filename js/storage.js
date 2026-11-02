@@ -6,6 +6,44 @@
 const STORAGE_KEY = "HACKATHON_REGISTRATIONS_V2";
 const SETTINGS_KEY = "HACKATHON_SETTINGS_V2";
 const CURRENT_LEAD_SESSION_KEY = "HACKATHON_CURRENT_LEAD_SESSION";
+const ADMIN_PASS_KEY = "HACKATHON_ADMIN_PASSWORD_HASH";
+const ADMIN_SESSION_KEY = "HACKATHON_ADMIN_AUTH_TOKEN";
+
+const AdminAuth = {
+  DEFAULT_PASSWORD: "admin2026",
+
+  getPassword() {
+    return localStorage.getItem(ADMIN_PASS_KEY) || this.DEFAULT_PASSWORD;
+  },
+
+  setPassword(newPassword) {
+    if (!newPassword || newPassword.trim().length < 4) {
+      throw new Error("Password must be at least 4 characters long.");
+    }
+    localStorage.setItem(ADMIN_PASS_KEY, newPassword.trim());
+    return true;
+  },
+
+  login(enteredPassword) {
+    const currentPass = this.getPassword();
+    if (enteredPassword && enteredPassword.trim() === currentPass) {
+      sessionStorage.setItem(ADMIN_SESSION_KEY, "authenticated_" + Date.now());
+      window.dispatchEvent(new CustomEvent("hackathon_admin_auth_changed"));
+      return true;
+    }
+    return false;
+  },
+
+  logout() {
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    window.dispatchEvent(new CustomEvent("hackathon_admin_auth_changed"));
+  },
+
+  isAuthenticated() {
+    const token = sessionStorage.getItem(ADMIN_SESSION_KEY);
+    return token !== null && token.startsWith("authenticated_");
+  }
+};
 
 const StorageManager = {
   // Get all registrations

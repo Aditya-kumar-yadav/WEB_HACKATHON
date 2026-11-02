@@ -26,7 +26,10 @@
    - **Odd vs Even Balance Tracker**: Visual ratio bar and percentage breakdown of odd vs even problem choices.
    - **Collision Breakdown Card**: Instantly lists every problem statement chosen by 2 or more teams, displaying the team names and lead roll numbers.
 
-5. **Direct Excel (.xlsx) & Google Notes Export**:
+5. **Confidential Organizer Portal & Excel (.xlsx) Protection**:
+   - **Privacy Protected**: The full team roster, student roll numbers, and Excel downloads are hidden from general students and public visitors.
+   - **Organizer Authentication Gate**: Accessing the organizer dashboard and exporting Excel requires entering the organizer password (Default: `admin2026`).
+   - **Customizable Password**: Organizers can update their passcode at any time via the "Change Password" modal.
    - **Excel Export (.xlsx)**: Generates a multi-sheet Microsoft Excel workbook containing:
      - *Sheet 1: Team Registrations* (S.No, Timestamp, Team Name, Problem ID & Title, Problem Type, Team Lead Name & Roll No, Member 2/3/4/5 Names & Roll Nos, and Full Roster Summary).
      - *Sheet 2: Problem Distribution* (Selection counts and assigned teams per problem).

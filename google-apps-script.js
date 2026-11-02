@@ -183,3 +183,4 @@ function getOrCreateRegistrationSheet() {
 
   return sheet;
 }
+

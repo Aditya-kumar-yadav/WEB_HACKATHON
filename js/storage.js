@@ -378,3 +378,4 @@ const StorageManager = {
     window.dispatchEvent(new CustomEvent("hackathon_data_updated"));
   }
 };
+

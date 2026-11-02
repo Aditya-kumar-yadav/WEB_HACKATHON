@@ -80,11 +80,48 @@ const ExportManager = {
         "Member 4 Roll No": m4.rollNo,
         "Member 5 Name": m5.name,
         "Member 5 Roll No": m5.rollNo,
-        "Full Team Roster": memberSummaries.join(" | ")
+        "All Members Summary": memberSummaries.join(" | ")
       };
     });
 
-    // Build Sheet 2: Problem Statement Distribution & Odd/Even Summary
+    // Build Sheet 2: Individual Student Roll Numbers Master List
+    const studentRows = [];
+    let studentIndex = 1;
+    registrations.forEach(r => {
+      // 1. Team Lead
+      studentRows.push({
+        "S.No": studentIndex++,
+        "Roll Number": r.leadRollNo,
+        "Student Name": r.leadName,
+        "Role": "Team Lead",
+        "Team Name": r.teamName,
+        "Problem ID": r.problemId,
+        "Problem Title": r.problemTitle,
+        "Problem Type": r.isOddProblem ? "ODD" : "EVEN",
+        "Contact": r.leadPhone || r.leadEmail || "N/A"
+      });
+
+      // 2. Members
+      if (r.members) {
+        r.members.forEach((m, mIdx) => {
+          if (m.name.trim() || m.rollNo.trim()) {
+            studentRows.push({
+              "S.No": studentIndex++,
+              "Roll Number": m.rollNo,
+              "Student Name": m.name,
+              "Role": `Member #${mIdx + 2}`,
+              "Team Name": r.teamName,
+              "Problem ID": r.problemId,
+              "Problem Title": r.problemTitle,
+              "Problem Type": r.isOddProblem ? "ODD" : "EVEN",
+              "Contact": "N/A"
+            });
+          }
+        });
+      }
+    });
+
+    // Build Sheet 3: Problem Statement Distribution & Odd/Even Summary
     const analytics = StorageManager.getAnalytics();
     const problemSummaryRows = PROBLEM_STATEMENTS.map(ps => {
       const teams = analytics.problemMap[ps.id] || [];
@@ -99,7 +136,7 @@ const ExportManager = {
       };
     });
 
-    // Build Sheet 3: Overall Summary Stats
+    // Build Sheet 4: Overall Summary Stats
     const statsRows = [
       { "Metric": "Total Teams Registered", "Value": analytics.totalTeams },
       { "Metric": "Total Student Participants", "Value": analytics.totalMembersCount },
@@ -113,7 +150,7 @@ const ExportManager = {
     // Create workbook
     const wb = XLSX.utils.book_new();
 
-    // Sheet 1
+    // Sheet 1: Team Registrations
     const ws1 = XLSX.utils.json_to_sheet(teamRows);
     ws1["!cols"] = [
       { wch: 6 },  // S.No
@@ -138,11 +175,26 @@ const ExportManager = {
       { wch: 16 }, // M5 Roll
       { wch: 50 }  // Summary
     ];
-    XLSX.utils.book_append_sheet(wb, ws1, "Team Registrations");
+    XLSX.utils.book_append_sheet(wb, ws1, "Teams Overview");
 
-    // Sheet 2
-    const ws2 = XLSX.utils.json_to_sheet(problemSummaryRows);
+    // Sheet 2: Individual Student Roll Numbers
+    const ws2 = XLSX.utils.json_to_sheet(studentRows);
     ws2["!cols"] = [
+      { wch: 6 },  // S.No
+      { wch: 18 }, // Roll Number
+      { wch: 24 }, // Student Name
+      { wch: 14 }, // Role
+      { wch: 22 }, // Team Name
+      { wch: 12 }, // Problem ID
+      { wch: 38 }, // Problem Title
+      { wch: 14 }, // Problem Type
+      { wch: 20 }  // Contact
+    ];
+    XLSX.utils.book_append_sheet(wb, ws2, "Students Roll No List");
+
+    // Sheet 3: Problem Distribution
+    const ws3 = XLSX.utils.json_to_sheet(problemSummaryRows);
+    ws3["!cols"] = [
       { wch: 12 }, // Problem ID
       { wch: 42 }, // Problem Title
       { wch: 14 }, // Problem Type
@@ -150,15 +202,15 @@ const ExportManager = {
       { wch: 30 }, // Status
       { wch: 60 }  // Teams Assigned
     ];
-    XLSX.utils.book_append_sheet(wb, ws2, "Problem Distribution");
+    XLSX.utils.book_append_sheet(wb, ws3, "Problem Distribution");
 
-    // Sheet 3
-    const ws3 = XLSX.utils.json_to_sheet(statsRows);
-    ws3["!cols"] = [
+    // Sheet 4: Summary Stats
+    const ws4 = XLSX.utils.json_to_sheet(statsRows);
+    ws4["!cols"] = [
       { wch: 45 },
       { wch: 35 }
     ];
-    XLSX.utils.book_append_sheet(wb, ws3, "Summary Statistics");
+    XLSX.utils.book_append_sheet(wb, ws4, "Summary Statistics");
 
     // Generate filename with timestamp
     const dateStr = new Date().toISOString().slice(0, 10);

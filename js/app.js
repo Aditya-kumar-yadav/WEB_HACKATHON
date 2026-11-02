@@ -13,13 +13,7 @@ let currentCatalogueSearch = "";
 
 // Initialize App on DOM Ready
 document.addEventListener("DOMContentLoaded", () => {
-  // If no registrations exist yet, seed demo data for instant out-of-the-box demonstration!
-  const existing = StorageManager.getRegistrations();
-  if (!existing || existing.length === 0) {
-    StorageManager.seedDemoData();
-  }
-
-  // Render initial views
+  // Render initial views (starts clean with 0 registrations)
   renderProblemsList();
   renderCatalogue();
   updateAnalyticsUI();
